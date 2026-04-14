@@ -1,0 +1,247 @@
+{
+  "version": "1.0",
+  "last_updated": "2025-01-15",
+  "notes": "Operator-editable stock watchlist. Add/remove stocks as needed. Ensure ticker symbols match NSE exactly.",
+  "stocks": [
+    {
+      "ticker": "RELIANCE",
+      "name": "Reliance Industries Ltd",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.05,
+      "notes": "Largest Indian conglomerate — energy, retail, telecom"
+    },
+    {
+      "ticker": "ONGC",
+      "name": "Oil and Natural Gas Corporation",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.02,
+      "notes": "State-owned upstream oil explorer"
+    },
+    {
+      "ticker": "NTPC",
+      "name": "NTPC Ltd",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.08,
+      "notes": "Largest thermal power producer. Expanding into renewables"
+    },
+    {
+      "ticker": "BPCL",
+      "name": "Bharat Petroleum Corporation",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.15,
+      "notes": "State-owned refiner and fuel retailer"
+    },
+    {
+      "ticker": "IOC",
+      "name": "Indian Oil Corporation",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.12,
+      "notes": "Largest state-owned refiner"
+    },
+    {
+      "ticker": "GAIL",
+      "name": "GAIL (India) Ltd",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.10,
+      "notes": "Natural gas transmission and marketing"
+    },
+    {
+      "ticker": "ADANIGREEN",
+      "name": "Adani Green Energy Ltd",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.20,
+      "notes": "Renewable energy — solar and wind"
+    },
+    {
+      "ticker": "TATAPOWER",
+      "name": "Tata Power Company Ltd",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.12,
+      "notes": "Integrated power utility with growing renewables portfolio"
+    },
+    {
+      "ticker": "POWERGRID",
+      "name": "Power Grid Corporation of India",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.05,
+      "notes": "Power transmission infrastructure"
+    },
+    {
+      "ticker": "COALINDIA",
+      "name": "Coal India Ltd",
+      "sector": "Energy",
+      "exchange": "NSE",
+      "api_import_dependency": 0.02,
+      "notes": "World's largest coal producer"
+    },
+    {
+      "ticker": "SUNPHARMA",
+      "name": "Sun Pharmaceutical Industries",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.55,
+      "notes": "India's largest pharma company. High China API dependency"
+    },
+    {
+      "ticker": "DRREDDY",
+      "name": "Dr. Reddy's Laboratories",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.48,
+      "notes": "Major generics player. Significant US market exposure"
+    },
+    {
+      "ticker": "CIPLA",
+      "name": "Cipla Ltd",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.42,
+      "notes": "Respiratory and HIV therapeutics focus"
+    },
+    {
+      "ticker": "AUROPHARMA",
+      "name": "Aurobindo Pharma Ltd",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.60,
+      "notes": "Highest China API dependency in watchlist. Key risk factor"
+    },
+    {
+      "ticker": "DIVISLAB",
+      "name": "Divi's Laboratories Ltd",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.30,
+      "notes": "API and intermediate manufacturer — LESS exposed to imports"
+    },
+    {
+      "ticker": "BIOCON",
+      "name": "Biocon Ltd",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.35,
+      "notes": "Biosimilars leader. Growing US presence via Viatris JV"
+    },
+    {
+      "ticker": "LUPIN",
+      "name": "Lupin Ltd",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.52,
+      "notes": "US generics and India-branded formulations"
+    },
+    {
+      "ticker": "TORNTPHARM",
+      "name": "Torrent Pharmaceuticals",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.38,
+      "notes": "India-focused branded generics"
+    },
+    {
+      "ticker": "ALKEM",
+      "name": "Alkem Laboratories",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.40,
+      "notes": "Anti-infectives and gastro segment leader"
+    },
+    {
+      "ticker": "IPCALAB",
+      "name": "IPCA Laboratories",
+      "sector": "Pharma",
+      "exchange": "NSE",
+      "api_import_dependency": 0.45,
+      "notes": "API-integrated pharma company"
+    },
+    {
+      "ticker": "PAGEIND",
+      "name": "Page Industries Ltd",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.15,
+      "notes": "Exclusive Jockey licensee in India. Premium innerwear"
+    },
+    {
+      "ticker": "WELSPUNLIV",
+      "name": "Welspun Living Ltd",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.20,
+      "notes": "Home textiles — towels, bed sheets. Major exporter"
+    },
+    {
+      "ticker": "ARVIND",
+      "name": "Arvind Ltd",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.18,
+      "notes": "Denim manufacturer and branded apparel"
+    },
+    {
+      "ticker": "RAYMOND",
+      "name": "Raymond Ltd",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.12,
+      "notes": "Suiting fabric and branded apparel"
+    },
+    {
+      "ticker": "TRIDENT",
+      "name": "Trident Ltd",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.22,
+      "notes": "Home textiles and paper. Cotton import dependent"
+    },
+    {
+      "ticker": "VARDHMAN",
+      "name": "Vardhman Textiles Ltd",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.25,
+      "notes": "Yarn manufacturer. Cotton price sensitive"
+    },
+    {
+      "ticker": "KITEX",
+      "name": "Kitex Garments Ltd",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.30,
+      "notes": "Children's garment exporter"
+    },
+    {
+      "ticker": "GOKEX",
+      "name": "Gokaldas Exports Ltd",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.28,
+      "notes": "Apparel exporter. High export revenue share"
+    },
+    {
+      "ticker": "SIYARAM",
+      "name": "Siyaram Silk Mills",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.15,
+      "notes": "Blended fabric manufacturer"
+    },
+    {
+      "ticker": "KPRMILL",
+      "name": "KPR Mill Ltd",
+      "sector": "Textile",
+      "exchange": "NSE",
+      "api_import_dependency": 0.20,
+      "notes": "Integrated textile — yarn to garment"
+    }
+  ]
+}

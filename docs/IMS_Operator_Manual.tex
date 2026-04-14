@@ -1,0 +1,551 @@
+\documentclass[12pt, a4paper]{report}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+\usepackage{listings}
+\usepackage{parskip}
+\tcbuselibrary{skins, breakable}
+
+% ---- Colour palette ----
+\definecolor{imsnavy}{HTML}{0A0E1A}
+\definecolor{imsteal}{HTML}{00D4FF}
+\definecolor{imsAmber}{HTML}{FFB800}
+\definecolor{imsCrimson}{HTML}{FF3B5C}
+\definecolor{imsEmerald}{HTML}{00FF88}
+\definecolor{imsLightGray}{HTML}{F5F7FA}
+\definecolor{imsDarkGray}{HTML}{2D3748}
+\definecolor{imsBlue}{HTML}{3B82F6}
+
+% ---- Custom callout boxes ----
+\newtcolorbox{warningbox}[1][]{
+  colback=imsAmber!12, colframe=imsAmber, coltitle=black,
+  title={\textbf{Important}}, fonttitle=\bfseries\small, #1
+}
+\newtcolorbox{actionbox}[1][]{
+  colback=imsCrimson!10, colframe=imsCrimson, coltitle=white,
+  title={\textbf{Action Required}}, fonttitle=\bfseries\small, #1
+}
+\newtcolorbox{tipbox}[1][]{
+  colback=imsteal!10, colframe=imsteal, coltitle=black,
+  title={\textbf{Tip}}, fonttitle=\bfseries\small, #1
+}
+\newtcolorbox{successbox}[1][]{
+  colback=imsEmerald!12, colframe=imsEmerald, coltitle=black,
+  title={\textbf{Expected Result}}, fonttitle=\bfseries\small, #1
+}
+\newtcolorbox{termbox}[1][]{
+  colback=imsnavy, colframe=imsDarkGray, coltext=white,
+  fontupper=\ttfamily\small,
+  title={\textbf{\color{imsteal}Terminal Command}}, fonttitle=\bfseries\small, #1
+}
+
+% ---- Listings style ----
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{imsLightGray},
+  frame=single,
+  rulecolor=\color{imsDarkGray},
+  breaklines=true,
+}
+
+% ---- Header/Footer ----
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{imsDarkGray}IMS Operator Manual}
+\fancyhead[R]{\small\color{imsDarkGray}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ---- Hyperlinks ----
+\hypersetup{
+  colorlinks=true,
+  linkcolor=imsBlue,
+  urlcolor=imsteal,
+  citecolor=imsDarkGray,
+}
+
+% ---- Title ----
+\title{
+  \vspace{-2cm}
+  {\color{imsteal}\rule{\linewidth}{2pt}}\\[0.5cm]
+  {\Huge\bfseries Indian Market Sentinel}\\[0.3cm]
+  {\Large\color{imsDarkGray} Operator Manual}\\[0.3cm]
+  {\color{imsteal}\rule{\linewidth}{2pt}}\\[1cm]
+  {\large Version 1.0 --- \today}
+}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%% ============================================================
+%% CHAPTER 1
+%% ============================================================
+\chapter{What Is the Indian Market Sentinel?}
+
+The Indian Market Sentinel (IMS) is a software system that runs on your computer and watches three layers of financial data simultaneously:
+
+\begin{enumerate}
+\item \textbf{Retail sentiment} --- what individual investors, traders, and financial media are saying about specific stocks on Twitter, Reddit, Moneycontrol, and Economic Times.
+\item \textbf{Institutional flows} --- what large funds, FIIs, and DIIs are actually \emph{doing} with their money, as revealed by NSE bulk/block deal disclosures and daily FII/DII flow data.
+\item \textbf{Macro regime} --- the broader economic environment, classified by analysing RBI monetary policy minutes, inflation data, interest rates, and yield curves.
+\end{enumerate}
+
+The system's entire purpose is to detect \textbf{divergences} between these three layers and alert you when they occur. The central thesis is simple: retail hype alone is noise. Retail hype \emph{in the context of} a supportive macro regime AND institutional conviction is signal.
+
+\subsection*{What the System Does NOT Do}
+
+The IMS does \textbf{not} give buy or sell recommendations. It does \textbf{not} execute trades. It does \textbf{not} manage your money. It surfaces structured information --- sentiment scores, institutional flow data, regime classifications, and divergence alerts --- for your own judgment. You are the decision-maker. The IMS is your intelligence assistant.
+
+\subsection*{System at a Glance}
+
+\begin{longtable}{p{4.5cm} p{5.5cm} p{3.5cm}}
+\toprule
+\textbf{What it watches} & \textbf{What it tells you} & \textbf{How often} \\
+\midrule
+Twitter \& Reddit mentions of NSE stocks & Retail sentiment score per ticker (CRSS) & Every 15 minutes \\
+Moneycontrol, Economic Times, Business Standard & News-driven sentiment, event classification & Every 15 minutes \\
+NSE Bulk \& Block Deals & Institutional conviction score (ICS) & Daily 6 PM IST \\
+FII/DII daily net flows & Smart money direction & Daily 7 PM IST \\
+RBI MPC minutes, CPI, Repo Rate & Current Macro Regime classification & Each data release \\
+NSE/BSE Corporate Actions & Pre-event alerts for results, buybacks, dividends & Daily 9 AM IST \\
+Screener.in quarterly data & Earnings quality score (STRONG\_BUY to STRONG\_SELL) & On result date \\
+\bottomrule
+\end{longtable}
+
+%% ============================================================
+%% CHAPTER 2
+%% ============================================================
+\chapter{The Folder Structure}
+
+The IMS project is organised into folders. Here is what each one does, colour-coded by how often you will need to interact with it:
+
+\begin{itemize}[leftmargin=2cm]
+\item[\textcolor{imsEmerald}{\textbf{GREEN}}] You may need to edit this file
+\item[\textcolor{imsAmber}{\textbf{YELLOW}}] Understand it, but rarely edit
+\item[\textcolor{imsCrimson}{\textbf{RED}}] Never touch --- the system will break
+\end{itemize}
+
+\textcolor{imsEmerald}{\texttt{.env}} --- This is the most important file you will ever edit in this system. It holds all your API keys --- the passwords that allow the IMS to connect to Twitter, Reddit, the FRED database, and the AI language model. Fill this in before your first launch. After that, you only open it if a service stops working and you need to renew an expired key.
+
+\textcolor{imsEmerald}{\texttt{watchlist.json}} --- This is your stock list. It is the only file you will regularly edit during normal operation. See Chapter 4 for detailed instructions on how to add or remove stocks.
+
+\textcolor{imsAmber}{\texttt{backend/config.py}} --- Contains all the tuneable numbers in the system: how much weight to give Twitter vs.\ Reddit vs.\ News in the sentiment score, the thresholds that trigger each alert type, and timing settings. Only edit this if you want to tune the system's sensitivity. Instructions in Chapter 6.
+
+\textcolor{imsCrimson}{\texttt{docker-compose.yml}} --- Think of this as the architect's blueprint for the entire system. It tells Docker exactly how to build and connect every component. You never need to open or edit this file. If you accidentally change something here, the entire system may fail to start.
+
+\textcolor{imsCrimson}{\texttt{backend/}} --- The analysts' room. All the data-crunching code lives here. Do not edit.
+
+\textcolor{imsCrimson}{\texttt{frontend/}} --- The terminal screen code. Do not edit.
+
+\begin{tipbox}
+Think of the project like a trading desk. The \texttt{backend/} folder is the analysts' room --- it does all the data crunching. The \texttt{frontend/} folder is the Bloomberg terminal screen that shows you the output. The \texttt{db/} folder is the filing cabinet where all historical data is stored permanently. You, the operator, only ever need to interact with three things: \texttt{.env} (your API keys), \texttt{watchlist.json} (your stocks), and the web dashboard at \texttt{http://localhost:3000}.
+\end{tipbox}
+
+%% ============================================================
+%% CHAPTER 3
+%% ============================================================
+\chapter{First-Time Setup (Step by Step)}
+
+Follow these steps exactly. Each step includes the command to type, what correct output looks like, and the most common mistake.
+
+\section{Step 1: Install Docker Desktop}
+
+Docker is a self-contained capsule that installs every piece of software the IMS needs automatically, without installing anything directly on your computer.
+
+\begin{actionbox}
+Download Docker Desktop from: \url{https://www.docker.com/products/docker-desktop/}
+
+On Mac: drag Docker.app to your Applications folder and launch it. On Windows: run the installer and restart your computer when prompted. On Linux: follow the instructions for your distribution.
+\end{actionbox}
+
+\begin{warningbox}
+Most common mistake: forgetting to \textbf{launch} Docker Desktop after installing it. The whale icon must appear in your menu bar (Mac) or system tray (Windows) before proceeding.
+\end{warningbox}
+
+\section{Step 2: Download the IMS Project}
+
+\begin{termbox}
+git clone https://github.com/yourusername/ims.git
+\end{termbox}
+
+If you do not have \texttt{git} installed, you can download the project as a ZIP file from the GitHub page and unzip it to your Downloads folder.
+
+\section{Step 3: Open a Terminal}
+
+On Mac: press Cmd+Space, type ``Terminal'', press Enter. On Windows: press Win+X, click ``Windows PowerShell''. On Linux: press Ctrl+Alt+T.
+
+\section{Step 4: Navigate to the Project Folder}
+
+\begin{termbox}
+cd Downloads/ims
+\end{termbox}
+
+On Windows, this might be: \texttt{cd C:\textbackslash Users\textbackslash YourName\textbackslash Downloads\textbackslash ims}
+
+\section{Step 5: Create Your .env File}
+
+\begin{termbox}
+cp .env.example .env
+\end{termbox}
+
+Now open \texttt{.env} in any text editor and fill in your API keys:
+
+\textbf{Anthropic API Key:} Go to \url{https://console.anthropic.com} --- API Keys --- Create Key --- copy immediately (shown only once).
+
+\textbf{Twitter Bearer Token:} Go to \url{https://developer.twitter.com} --- sign in --- Create Project --- Create App --- Keys and Tokens tab --- copy Bearer Token.
+
+\textbf{Reddit Credentials:} Go to \url{https://reddit.com/prefs/apps} --- ``are you a developer? create an app'' --- type: script --- copy client\_id (under app name) and secret.
+
+\textbf{FRED API Key:} Go to \url{https://fred.stlouisfed.org/docs/api/api_key.html} --- Request API Key --- fill form --- key emailed within minutes.
+
+\textbf{Database Password:} Choose any strong password and enter it for both \texttt{POSTGRES\_PASSWORD} and inside \texttt{DATABASE\_URL}.
+
+\section{Step 6: Start the System}
+
+\begin{termbox}
+docker-compose up -d
+\end{termbox}
+
+This single command reads the blueprint and automatically downloads, installs, and starts every component of the IMS. The first time you run it, it may take 5--15 minutes to download all the software packages. You will see a lot of text scrolling --- this is normal.
+
+\begin{successbox}
+You should see output like:
+\begin{verbatim}
+Creating ims_postgres ... done
+Creating ims_redis    ... done
+Creating ims_backend  ... done
+Creating ims_frontend ... done
+Creating ims_celery   ... done
+\end{verbatim}
+\end{successbox}
+
+\section{Step 7: Verify Everything Is Running}
+
+\begin{termbox}
+docker-compose ps
+\end{termbox}
+
+\begin{successbox}
+All 5 services should show \texttt{Up} status. If any show \texttt{Exit} or \texttt{Restarting}, see Chapter 8 for troubleshooting.
+\end{successbox}
+
+\section{Step 8: Open the Dashboard}
+
+Open any web browser and go to: \texttt{http://localhost:3000}
+
+You should see the IMS dashboard with the Bloomberg-style dark interface, live ticker strip at the top, and the regime badge in the top-right corner.
+
+\begin{tipbox}
+To compile this very document into a PDF: go to \url{https://www.overleaf.com}, create a free account, click ``New Project'' then ``Upload Project'', upload this \texttt{.tex} file, and click the green ``Recompile'' button. Run recompile twice if the table of contents does not appear correctly.
+\end{tipbox}
+
+%% ============================================================
+%% CHAPTER 4
+%% ============================================================
+\chapter{Your Watchlist}
+
+The file \texttt{watchlist.json} is the only file you will regularly edit. It tells the IMS which stocks to monitor.
+
+Each stock entry has these fields:
+
+\begin{itemize}
+\item \texttt{ticker} --- The exact NSE symbol. Must match NSE precisely (e.g., \texttt{SUNPHARMA}, not \texttt{Sun Pharma}).
+\item \texttt{name} --- Full company name (for your reference only).
+\item \texttt{sector} --- One of: \texttt{Energy}, \texttt{Pharma}, \texttt{Textile}.
+\item \texttt{api\_import\_dependency} --- A number from 0.0 to 1.0 representing how much of the company's raw materials come from imports (especially China for Pharma companies). This drives the Supply Chain Stress signal.
+\end{itemize}
+
+\begin{warningbox}
+The most common error is misspelling a ticker symbol. If you type \texttt{SUNPHARMA} as \texttt{SUN\_PHARMA} or \texttt{SUNPHARM}, the system will silently fail to find data for that stock. Always verify ticker symbols on \url{https://www.nseindia.com}.
+\end{warningbox}
+
+The system ships with 30 pre-loaded stocks: 10 Energy, 10 Pharma, and 10 Textile. After editing, save the file and the changes take effect within 15 minutes (the next scheduler cycle). No restart is needed.
+
+%% ============================================================
+%% CHAPTER 5
+%% ============================================================
+\chapter{Understanding the Dashboard}
+
+\section{Top Bar}
+
+The top bar shows live market indices (Nifty 50, Sensex, Bank Nifty, USD/INR, Brent Crude, Gold MCX) with real-time price, change amount, and change percentage. Green numbers mean the index is up; red means down.
+
+The \textbf{Regime Badge} on the far right shows the current macro regime classification. Its colour tells you the environment at a glance:
+\begin{itemize}
+\item \textcolor{imsCrimson}{\textbf{Red}} = Hawkish Tightening (RBI actively hiking rates)
+\item \textcolor{imsAmber}{\textbf{Amber}} = Hawkish Pause (rates paused but language hawkish)
+\item \textcolor{gray}{\textbf{Grey}} = Neutral Watchful (no directional bias)
+\item \textcolor{imsteal}{\textbf{Teal}} = Dovish Pause (language softening)
+\item \textcolor{imsEmerald}{\textbf{Green}} = Dovish Easing (RBI cutting rates)
+\item \textcolor{imsCrimson}{\textbf{Pulsing Red}} = Crisis Liquidity (emergency measures)
+\end{itemize}
+
+\section{Left Panel: Active Signals}
+
+This panel shows alpha signals detected by the divergence engine. Each card displays the ticker, pattern name, confidence level (HIGH/MEDIUM\_HIGH/MEDIUM), and the CRSS and ICS values at the time of the signal. Click any signal card to see the full supporting evidence.
+
+\section{Centre Panel: Sentiment Heatmap}
+
+The heatmap grid shows sentiment scores by sector and ticker. Each cell's colour runs from deep red ($-1$, extremely bearish) through grey (0, neutral) to deep green ($+1$, extremely bullish). Below the grid, a bar chart shows the last 10 days of FII/DII flows.
+
+\section{Right Panel: Corporate Actions}
+
+Shows upcoming corporate events for the next 7 days. Events with HIGH severity (quarterly results, buyback deadlines) have an amber left border to draw your attention.
+
+\section{Bottom Strip: Macro Indicators}
+
+Displays the key macro data points: CPI YoY, Repo Rate, G-Sec yields, yield curve slope, USD/INR, and VIX.
+
+%% ============================================================
+%% CHAPTER 6
+%% ============================================================
+\chapter{Pre-Market Morning Routine}
+
+Run this 5-minute checklist before 9:15 AM IST every trading day:
+
+\begin{enumerate}[label=$\square$ \arabic*.]
+\item Open dashboard at \texttt{http://localhost:3000}
+\item Check the \textbf{Regime Badge} in the top bar --- has it changed since yesterday? If YES: read the regime explanation panel on the Regime page and review all open signals.
+\item Check \textbf{Corporate Actions panel} (right side) --- any events TODAY or TOMORROW? If YES: click the event card and read the full result/buyback analysis before market opens.
+\item Scan \textbf{Active Signals} (left panel) --- any new HIGH confidence signals since last evening? Read the supporting evidence for each one.
+\item Check \textbf{Portfolio Vulnerability} if you hold positions. Any RED cells = review that position before trading opens.
+\item Note yesterday's \textbf{FII/DII flow bar} in the centre panel:
+  \begin{itemize}
+  \item FII net selling + DII net buying = domestic institutions absorbing foreign outflows (constructive)
+  \item Both FII and DII selling = broad institutional distribution (cautious)
+  \end{itemize}
+\end{enumerate}
+
+%% ============================================================
+%% CHAPTER 7
+%% ============================================================
+\chapter{Routine Maintenance}
+
+\begin{longtable}{p{3cm} p{3cm} p{7cm}}
+\toprule
+\textbf{Task} & \textbf{Frequency} & \textbf{Command / Action} \\
+\midrule
+Health check & Daily & Run \texttt{docker-compose ps} and verify all 5 services show ``Up'' \\
+View logs & When needed & \texttt{docker-compose logs -f backend} (press Ctrl+C to stop) \\
+Restart a service & When stuck & \texttt{docker-compose restart backend} \\
+System update & Monthly & \texttt{docker-compose down \&\& docker-compose up -d --build} \\
+Database backup & Weekly & \texttt{docker exec ims\_postgres pg\_dump -U ims ims\_db > backup.sql} \\
+Stop system & When not in use & \texttt{docker-compose stop} \\
+Start system & Resume & \texttt{docker-compose start} \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+\textbf{Nuclear reset:} The command \texttt{docker-compose down -v} will delete ALL stored data including your entire historical sentiment database, all signals, and regime history. Only use this if you want to start completely fresh. You cannot undo this.
+\end{warningbox}
+
+%% ============================================================
+%% CHAPTER 8
+%% ============================================================
+\chapter{Troubleshooting}
+
+\section{1. Dashboard won't open at localhost:3000}
+
+\textbf{Symptom:} Browser shows ``This site can't be reached.''
+
+\textbf{Cause:} Frontend service not running.
+
+\textbf{Fix:} Run \texttt{docker-compose ps} to check status. If frontend shows Exit, run \texttt{docker-compose logs frontend} to see the error. Then \texttt{docker-compose restart frontend}.
+
+\section{2. Sentiment data showing as stale}
+
+\textbf{Symptom:} Dashboard shows data but timestamps are hours old.
+
+\textbf{Cause:} Scraper jobs failing silently due to API rate limits or expired tokens.
+
+\textbf{Fix:} Run \texttt{docker-compose logs backend | grep "error"} to identify which scraper is failing. Check your API keys in \texttt{.env} are still valid.
+
+\section{3. NSE bulk deal data missing}
+
+\textbf{Symptom:} Institutional panel empty or showing old data.
+
+\textbf{Cause:} NSE session cookie expired or NSE website changed format.
+
+\textbf{Fix:} Run \texttt{docker-compose restart backend}. The system will re-seed the NSE session on restart.
+
+\section{4. Regime not updated after RBI meeting}
+
+\textbf{Symptom:} Regime badge still shows old classification after an MPC announcement.
+
+\textbf{Cause:} The noise filter requires 2 consecutive confirmations. Or the macro data hasn't been fetched yet.
+
+\textbf{Fix:} Wait for the next scheduled classification run (Monday 8 AM IST). Or restart the backend to trigger an immediate run.
+
+\section{5. Corporate actions calendar empty}
+
+\textbf{Symptom:} Right panel shows ``No upcoming events.''
+
+\textbf{Cause:} NSE corporate actions API returned empty or failed.
+
+\textbf{Fix:} Check backend logs. The system will show mock data as fallback. Real data will populate on the next successful fetch.
+
+\section{6. Screener.in result analysis showing N/A}
+
+\textbf{Cause:} Screener.in may have changed their HTML structure or is rate-limiting.
+
+\textbf{Fix:} The system uses mock financial data as fallback. Real data will resume when Screener.in is accessible.
+
+\section{7. A ticker added to watchlist not appearing}
+
+\textbf{Cause:} Spelling mismatch or JSON syntax error in watchlist.json.
+
+\textbf{Fix:} Verify the ticker symbol on nseindia.com. Open watchlist.json and check for missing commas or brackets.
+
+\section{8. System very slow / high CPU}
+
+\textbf{Cause:} FinBERT model loading or too many concurrent scraper jobs.
+
+\textbf{Fix:} Check \texttt{docker stats}. If backend is using excessive memory, reduce the watchlist size or increase Docker's memory allocation in Docker Desktop settings.
+
+\section{9. ``Docker not found'' on first setup}
+
+\textbf{Cause:} Docker Desktop not installed or not in system PATH.
+
+\textbf{Fix:} Install Docker Desktop from \url{https://docker.com/products/docker-desktop/} and ensure it is running (whale icon visible).
+
+\section{10. Database connection error}
+
+\textbf{Cause:} PostgreSQL service not healthy or password mismatch.
+
+\textbf{Fix:} Run \texttt{docker-compose logs postgres}. Verify the password in \texttt{.env} matches both POSTGRES\_PASSWORD and DATABASE\_URL.
+
+\section{11. Alpha signals page empty}
+
+\textbf{Cause:} The divergence detector hasn't found any qualifying patterns yet, or no data has been ingested.
+
+\textbf{Fix:} Verify the sentiment pipeline is running (\texttt{docker-compose logs backend | grep sentiment}). Wait for at least one complete 15-minute cycle.
+
+\section{12. Portfolio vulnerability heatmap all grey}
+
+\textbf{Cause:} Analysis hasn't been run yet.
+
+\textbf{Fix:} Go to the Portfolio page, enter your holdings, and click ``Analyse Vulnerability.''
+
+%% ============================================================
+%% CHAPTER 9
+%% ============================================================
+\chapter{Glossary}
+
+\begin{description}[style=nextline, leftmargin=3cm]
+\item[Alpha Signal] A structured alert generated when the divergence detector finds a qualifying pattern between retail sentiment, institutional flows, and macro regime.
+\item[API Key] A password-like code that allows the IMS to connect to external data services (Twitter, Reddit, FRED, etc.).
+\item[Bearish] Expecting prices to fall. Negative sentiment.
+\item[Block Deal] A single trade on NSE where at least 5 lakh shares are exchanged. These are negotiated off-market and indicate institutional activity.
+\item[Bullish] Expecting prices to rise. Positive sentiment.
+\item[Bulk Deal] A trade where total quantity exceeds 0.5\% of the company's shares. Disclosed to the exchange.
+\item[CRSS] Composite Retail Sentiment Score. Weighted blend of Twitter, Reddit, and news sentiment. Range: $-1$ to $+1$.
+\item[Death Cross] When the 50-day SMA crosses below the 200-day SMA. Technical signal of trend deterioration.
+\item[DII] Domestic Institutional Investors. Indian mutual funds, insurance companies, etc.
+\item[Docker] Software that packages the entire IMS into self-contained units that run identically on any computer.
+\item[FII] Foreign Institutional Investors. Overseas funds investing in Indian markets.
+\item[Golden Cross] When the 50-day SMA crosses above the 200-day SMA. Technical signal of trend strength.
+\item[Hawkish] Central bank bias toward fighting inflation, typically via higher interest rates.
+\item[Dovish] Central bank bias toward supporting economic growth, typically via lower interest rates.
+\item[ICS] Institutional Conviction Score. Net institutional volume (5 days) divided by average daily volume (20 days). Range: $-1$ to $+1$.
+\item[LLM] Large Language Model. AI system (Claude or GPT) used to analyse RBI minutes and classify news.
+\item[MACD] Moving Average Convergence Divergence. Technical momentum indicator.
+\item[Macro Regime] The system's classification of the current economic environment into one of 6 states.
+\item[Momentum Label] Result of the earnings scoring pipeline: STRONG\_BUY, BUY, NEUTRAL, SELL, or STRONG\_SELL.
+\item[MPC] Monetary Policy Committee of the RBI. Sets interest rates.
+\item[NSE/BSE] National Stock Exchange / Bombay Stock Exchange. India's two main stock exchanges.
+\item[Pre-Event Alert] Warning that a corporate action (result, buyback, etc.) is happening within 1 trading day.
+\item[Repo Rate] The rate at which the RBI lends to commercial banks. The primary monetary policy tool.
+\item[RSI] Relative Strength Index. Oscillator from 0--100; above 70 = overbought, below 30 = oversold.
+\item[SEBI] Securities and Exchange Board of India. The market regulator.
+\item[Sentiment Score] A number from $-1$ (extremely negative) to $+1$ (extremely positive) measuring the tone of text.
+\item[Supertrend] A trend-following indicator based on ATR. Labels trend as UP or DOWN.
+\item[TimescaleDB] A database extension that efficiently stores and queries time-series data.
+\item[Vulnerability Heatmap] A colour-coded table showing each portfolio holding's exposure to 5 risk dimensions.
+\item[WebSocket] A technology that allows the dashboard to receive new signals instantly without refreshing.
+\item[YoY] Year-over-Year. Comparing a metric to the same period in the previous year.
+\item[Z-Score] A statistical measure of how far a value is from its recent average, in units of standard deviation.
+\end{description}
+
+%% ============================================================
+%% CHAPTER 10
+%% ============================================================
+\chapter{Quick Reference Card}
+
+Print this page and keep it at your desk.
+
+\begin{longtable}{p{4.5cm} p{4cm} p{5cm}}
+\toprule
+\textbf{Signal / Indicator} & \textbf{What it means} & \textbf{What to consider} \\
+\midrule
+\endhead
+Regime: HAWKISH TIGHTENING & RBI actively hiking rates, fighting inflation & Be sceptical of bullish retail signals; distribution setups more reliable \\
+\midrule
+Regime: DOVISH EASING & RBI cutting rates, supporting growth & Trend-following longs more reliable; Golden Cross signals more meaningful \\
+\midrule
+CRSS $> 0.7$, ICS $< 0.2$ & Retail very bullish, institutions not following & Classic retail bubble setup --- watch for mean-reversion \\
+\midrule
+CRSS $< 0.0$, ICS $> 0.6$ & Retail ignoring, institutions accumulating & Smart money accumulation --- potential re-rating ahead \\
+\midrule
+News positive, ICS negative & Media bullish, institutions selling into it & Distribution warning --- potential exit liquidity trap \\
+\midrule
+Red cell: Supply Chain HIGH & Company exposed to import disruption & Review position; check if disruption news is confirmed \\
+\midrule
+Red cell: FII Flight HIGH & High FII ownership + recent FII selling & Elevated selling pressure risk if FII risk-off continues \\
+\midrule
+Pre-event: RESULT (HIGH) & Quarterly result tomorrow & Check result analysis card; note consensus estimate \\
+\midrule
+Pre-event: BUYBACK (HIGH) & Buyback premium $>20\%$, size $>2\%$ of m-cap & Significant corporate action --- check method and timeline \\
+\midrule
+FII selling + DII buying & Domestic institutions absorbing FII outflows & Often precedes stabilisation; medium-term constructive \\
+\midrule
+Both FII and DII selling & Broad institutional distribution phase & Defensive posture warranted across portfolio \\
+\midrule
+Golden Cross detected & 50-day SMA crossed above 200-day SMA & Trend-following signal --- stronger in DOVISH regimes \\
+\midrule
+Death Cross detected & 50-day SMA crossed below 200-day SMA & Trend deterioration --- more dangerous in HAWKISH regimes \\
+\bottomrule
+\end{longtable}
+
+\vfill
+
+\begin{center}
+\textcolor{imsteal}{\rule{0.5\linewidth}{1pt}}\\[0.3cm]
+{\small\color{imsDarkGray} Indian Market Sentinel v1.0 --- Operator Manual}\\
+{\small\color{imsDarkGray} For support, contact the system developer.}
+\end{center}
+
+\end{document}
+
+% ============================================================
+% HOW TO COMPILE THIS DOCUMENT INTO A PDF
+% ============================================================
+% OPTION 1 --- Recommended (no software installation needed):
+%   1. Go to https://www.overleaf.com and create a free account
+%   2. Click "New Project" -> "Upload Project" -> upload this .tex file
+%   3. Click the green "Recompile" button
+%   4. Download the PDF using the download button
+%   Run recompile TWICE if the table of contents does not appear correctly.
+%
+% OPTION 2 --- Local compilation:
+%   1. Install TeX Live from https://www.tug.org/texlive/
+%   2. Open a terminal in the docs/ folder
+%   3. Run: pdflatex IMS_Operator_Manual.tex
+%   4. Run it again: pdflatex IMS_Operator_Manual.tex
+%      (Two runs are needed for table of contents and cross-references)
+%   5. Output: IMS_Operator_Manual.pdf
+% ============================================================
