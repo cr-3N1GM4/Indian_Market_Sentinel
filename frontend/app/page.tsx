@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import RegimeBadge from "@/components/regime/RegimeBadge";
-import SectorHeatmap from "@/components/heatmaps/SectorHeatmap";
 import Link from "next/link";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -14,18 +12,42 @@ interface MarketTicker {
   changePct: number;
 }
 
-interface Signal {
-  signal_id: string;
-  timestamp: string;
-  ticker: string;
-  sector?: string;
-  pattern: string;
-  signal_type: string;
-  confidence: string;
-  regime?: string;
-  crss?: number;
-  ics?: number;
-  supporting_evidence: string[];
+interface NewsItem {
+  headline: string;
+  snippet: string;
+  source: string;
+  sentiment_score: number;
+  sentiment_label: string;
+  url: string;
+  time: string;
+}
+
+interface MarketMood {
+  score: number;
+  label: string;
+  color: string;
+  components: {
+    advance_decline: number;
+    vix: number;
+    fii_flow: number;
+    news_sentiment: number;
+  };
+  raw: {
+    advances: number;
+    declines: number;
+    vix: number;
+    fii_net_crores: number;
+  };
+}
+
+interface FIIDIIDay {
+  date: string;
+  fii_net_crores: number;
+  dii_net_crores: number;
+  fii_buy?: number;
+  fii_sell?: number;
+  dii_buy?: number;
+  dii_sell?: number;
 }
 
 interface CorpAction {
@@ -33,104 +55,87 @@ interface CorpAction {
   ticker: string;
   action_type: string;
   event_date: string;
+  ex_date?: string;
+  details?: Record<string, string>;
+  subject?: string;
   momentum_label?: string;
 }
 
-interface FIIDIIDay {
-  date: string;
-  fii_net_crores: number;
-  dii_net_crores: number;
-}
-
 export default function Dashboard() {
-  const [regime, setRegime] = useState<Record<string, unknown> | null>(null);
-  const [signals, setSignals] = useState<Signal[]>([]);
-  const [calendar, setCalendar] = useState<CorpAction[]>([]);
-  const [fiiDii, setFiiDii] = useState<FIIDIIDay[]>([]);
   const [market, setMarket] = useState<MarketTicker[]>([]);
-  const [selectedSignal, setSelectedSignal] = useState<Signal | null>(null);
+  const [mood, setMood] = useState<MarketMood | null>(null);
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [fiiDii, setFiiDii] = useState<FIIDIIDay[]>([]);
+  const [calendar, setCalendar] = useState<CorpAction[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadAll() {
       try {
-        const [regimeRes, signalsRes, calRes, fiiRes, mktRes] = await Promise.allSettled([
-          fetch(`${API}/api/v1/regime/current`).then(r => r.json()),
-          fetch(`${API}/api/v1/signals/active`).then(r => r.json()),
-          fetch(`${API}/api/v1/calendar/upcoming?days=7`).then(r => r.json()),
-          fetch(`${API}/api/v1/institutional/fii-dii-flows?days=10`).then(r => r.json()),
-          fetch(`${API}/api/v1/market-data`).then(r => r.json()),
+        const [mktRes, moodRes, newsRes, fiiRes, calRes] = await Promise.allSettled([
+          fetch(`${API}/api/v1/market-data`).then((r) => r.json()),
+          fetch(`${API}/api/v1/sentiment/market-mood`).then((r) => r.json()),
+          fetch(`${API}/api/v1/sentiment/trending-news?limit=15`).then((r) => r.json()),
+          fetch(`${API}/api/v1/institutional/fii-dii-flows?days=10`).then((r) => r.json()),
+          fetch(`${API}/api/v1/calendar/upcoming?days=7`).then((r) => r.json()),
         ]);
 
-        if (regimeRes.status === "fulfilled") setRegime(regimeRes.value.data);
-        if (signalsRes.status === "fulfilled") setSignals(signalsRes.value.data || []);
-        if (calRes.status === "fulfilled") setCalendar(calRes.value.data || []);
-        if (fiiRes.status === "fulfilled") setFiiDii(fiiRes.value.data || []);
         if (mktRes.status === "fulfilled") {
           const m = mktRes.value.data;
           setMarket([
-            { label: "NIFTY 50", value: m.nifty50?.last || 22150, change: m.nifty50?.change || 45, changePct: m.nifty50?.pChange || 0.2 },
-            { label: "SENSEX", value: m.sensex?.last || 72800, change: m.sensex?.change || 150, changePct: m.sensex?.pChange || 0.21 },
-            { label: "BANK NIFTY", value: m.niftyBank?.last || 47200, change: m.niftyBank?.change || -80, changePct: m.niftyBank?.pChange || -0.17 },
-            { label: "USD/INR", value: m.usdInr || 83.25, change: -0.12, changePct: -0.14 },
-            { label: "BRENT", value: m.brentCrude || 75.40, change: 0.85, changePct: 1.14 },
-            { label: "GOLD MCX", value: m.goldMcx || 62500, change: 350, changePct: 0.56 },
+            { label: "NIFTY 50", value: m.nifty50?.last || 0, change: m.nifty50?.change || 0, changePct: m.nifty50?.pChange || 0 },
+            { label: "SENSEX", value: m.sensex?.last || 0, change: m.sensex?.change || 0, changePct: m.sensex?.pChange || 0 },
+            { label: "BANK NIFTY", value: m.niftyBank?.last || 0, change: m.niftyBank?.change || 0, changePct: m.niftyBank?.pChange || 0 },
+            { label: "INDIA VIX", value: m.indiaVix || 0, change: 0, changePct: 0 },
           ]);
         }
+        if (moodRes.status === "fulfilled") setMood(moodRes.value.data);
+        if (newsRes.status === "fulfilled") setNews(newsRes.value.data || []);
+        if (fiiRes.status === "fulfilled") setFiiDii(fiiRes.value.data || []);
+        if (calRes.status === "fulfilled") setCalendar(calRes.value.data || []);
       } catch (err) {
         console.error("Dashboard load error:", err);
       }
+      setLoading(false);
     }
 
     loadAll();
-    const interval = setInterval(loadAll, 30000);
+    const interval = setInterval(loadAll, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // WebSocket for live signals
-  useEffect(() => {
-    const wsUrl = (process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000") + "/ws/live-signals";
-    let ws: WebSocket;
-    try {
-      ws = new WebSocket(wsUrl);
-      ws.onmessage = (event) => {
-        try {
-          const signal = JSON.parse(event.data);
-          setSignals(prev => [signal, ...prev].slice(0, 20));
-        } catch {}
-      };
-    } catch {}
-    return () => { if (ws) ws.close(); };
-  }, []);
-
-  const confidenceColor = (c: string) => {
-    if (c === "HIGH") return "text-ims-bearish";
-    if (c === "MEDIUM_HIGH") return "text-ims-warning";
-    return "text-ims-text-secondary";
+  const sentimentColor = (score: number) => {
+    if (score > 0.1) return "#00FF88";
+    if (score < -0.1) return "#FF3B5C";
+    return "#94A3B8";
   };
 
-  const actionTypeIcon = (t: string) => {
-    const icons: Record<string, string> = {
-      RESULT: "📊", DIVIDEND: "💰", BUYBACK: "🔄",
-      BONUS: "🎁", SPLIT: "✂️", AGM: "🏛️", EGM: "📋",
-    };
-    return icons[t] || "📌";
+  const sentimentBg = (score: number) => {
+    if (score > 0.1) return "rgba(0,255,136,0.08)";
+    if (score < -0.1) return "rgba(255,59,92,0.08)";
+    return "rgba(148,163,184,0.05)";
   };
+
+  const sentimentLabel = (label: string) => {
+    if (label === "POSITIVE" || label === "positive") return "🟢 Bullish";
+    if (label === "NEGATIVE" || label === "negative") return "🔴 Bearish";
+    return "⚪ Neutral";
+  };
+
+  const moodGaugeRotation = mood ? (mood.score / 100) * 180 - 90 : -90;
 
   return (
     <div className="min-h-screen bg-ims-bg flex flex-col">
       {/* ============ TOP BAR ============ */}
       <header className="border-b border-ims-border bg-ims-bg-panel px-4 py-2">
         <div className="flex items-center justify-between">
-          {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded bg-ims-teal flex items-center justify-center">
               <span className="text-ims-bg font-bold text-sm">IMS</span>
             </div>
-            <div>
-              <span className="font-semibold text-sm text-ims-text-primary tracking-wide">
-                Indian Market Sentinel
-              </span>
-            </div>
+            <span className="font-semibold text-sm text-ims-text-primary tracking-wide">
+              Indian Market Sentinel
+            </span>
           </div>
 
           {/* Live Ticker Strip */}
@@ -139,21 +144,25 @@ export default function Dashboard() {
               <div key={m.label} className="flex items-center gap-2 text-xs font-mono">
                 <span className="text-ims-text-secondary">{m.label}</span>
                 <span className="text-ims-text-primary font-semibold">
-                  {m.value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                  {m.value ? m.value.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : "—"}
                 </span>
-                <span className={m.change >= 0 ? "text-ims-bullish" : "text-ims-bearish"}>
-                  {m.change >= 0 ? "+" : ""}{m.change.toFixed(2)} ({m.changePct.toFixed(2)}%)
-                </span>
+                {m.label !== "INDIA VIX" && (
+                  <span className={m.change >= 0 ? "text-ims-bullish" : "text-ims-bearish"}>
+                    {m.change >= 0 ? "+" : ""}{m.change.toFixed(2)} ({m.changePct.toFixed(2)}%)
+                  </span>
+                )}
               </div>
             ))}
           </div>
 
-          {/* Regime Badge */}
-          <RegimeBadge
-            regime={(regime?.regime as string) || "neutral_watchful"}
-            confidence={regime?.confidence as number}
-            size="md"
-          />
+          {/* Market Mood Badge */}
+          {mood && (
+            <div className="flex items-center gap-2 px-3 py-1 rounded border border-ims-border">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: mood.color }} />
+              <span className="text-xs font-semibold" style={{ color: mood.color }}>{mood.label}</span>
+              <span className="text-xs text-ims-text-secondary font-mono">{mood.score.toFixed(0)}</span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -164,66 +173,63 @@ export default function Dashboard() {
         <Link href="/signals" className="text-ims-text-secondary hover:text-ims-text-primary">Signals</Link>
         <Link href="/portfolio" className="text-ims-text-secondary hover:text-ims-text-primary">Portfolio</Link>
         <Link href="/calendar" className="text-ims-text-secondary hover:text-ims-text-primary">Calendar</Link>
+        <Link href="/analyze" className="text-ims-text-secondary hover:text-ims-text-primary">Analyze</Link>
       </nav>
 
       {/* ============ MAIN GRID ============ */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-2 p-2">
-        {/* LEFT: Active Signals (25%) */}
-        <div className="terminal-panel p-3 overflow-y-auto" style={{ maxHeight: "calc(100vh - 160px)" }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-semibold text-ims-text-secondary uppercase tracking-wider">
-              Active Signals
-            </h2>
-            <Link href="/signals" className="text-[10px] text-ims-teal hover:underline">
-              View All →
-            </Link>
-          </div>
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2 p-2">
 
-          <div className="space-y-2">
-            {signals.slice(0, 15).map((sig) => (
-              <button
-                key={sig.signal_id}
-                onClick={() => setSelectedSignal(sig)}
-                className="w-full text-left terminal-panel p-2.5 hover:border-ims-teal transition-colors animate-slide-in"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-sm text-ims-teal">{sig.ticker}</span>
-                  <span className={`text-[10px] font-semibold ${confidenceColor(sig.confidence)}`}>
-                    {sig.confidence}
-                  </span>
+        {/* LEFT: Market Mood Gauge + FII/DII (3 cols) */}
+        <div className="lg:col-span-3 space-y-2">
+          {/* Market Mood Gauge */}
+          <div className="terminal-panel p-4">
+            <h2 className="text-xs font-semibold text-ims-text-secondary uppercase tracking-wider mb-3">
+              Market Mood
+            </h2>
+            {mood ? (
+              <div className="flex flex-col items-center">
+                {/* Gauge */}
+                <div className="relative w-44 h-24 overflow-hidden mb-2">
+                  <div className="absolute inset-0 rounded-t-full"
+                    style={{
+                      background: "conic-gradient(from 180deg, #FF3B5C 0deg, #FF6B35 36deg, #FFB800 72deg, #88FF00 108deg, #00FF88 144deg, #00FF88 180deg, transparent 180deg)",
+                      opacity: 0.3,
+                    }}
+                  />
+                  <div className="absolute bottom-0 left-1/2 w-1 h-20 origin-bottom"
+                    style={{
+                      transform: `translateX(-50%) rotate(${moodGaugeRotation}deg)`,
+                      transition: "transform 1s ease-out",
+                    }}
+                  >
+                    <div className="w-1 h-16 rounded" style={{ backgroundColor: mood.color }} />
+                    <div className="w-3 h-3 rounded-full -ml-1 -mt-1" style={{ backgroundColor: mood.color }} />
+                  </div>
                 </div>
-                <div className="text-xs text-ims-text-secondary mt-1">{sig.pattern.replace(/_/g, " ")}</div>
-                <div className="flex items-center gap-3 mt-1.5 text-[10px] font-mono">
-                  {sig.crss != null && (
-                    <span>CRSS: <span style={{ color: sig.crss > 0 ? "#00FF88" : "#FF3B5C" }}>
-                      {sig.crss > 0 ? "+" : ""}{sig.crss.toFixed(2)}
-                    </span></span>
-                  )}
-                  {sig.ics != null && (
-                    <span>ICS: <span style={{ color: sig.ics > 0 ? "#00FF88" : "#FF3B5C" }}>
-                      {sig.ics > 0 ? "+" : ""}{sig.ics.toFixed(2)}
-                    </span></span>
-                  )}
+                <div className="text-2xl font-bold font-mono" style={{ color: mood.color }}>{mood.score.toFixed(0)}</div>
+                <div className="text-sm font-semibold mt-1" style={{ color: mood.color }}>{mood.label}</div>
+
+                {/* Components */}
+                <div className="grid grid-cols-2 gap-2 mt-4 w-full text-[10px]">
+                  {[
+                    { label: "Adv/Dec", value: mood.components.advance_decline },
+                    { label: "VIX", value: mood.components.vix },
+                    { label: "FII Flow", value: mood.components.fii_flow },
+                    { label: "Sentiment", value: mood.components.news_sentiment },
+                  ].map((c) => (
+                    <div key={c.label} className="terminal-panel p-2 text-center">
+                      <div className="text-ims-text-secondary">{c.label}</div>
+                      <div className="font-mono font-bold text-ims-text-primary">{c.value.toFixed(0)}</div>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-[9px] text-ims-text-secondary mt-1">
-                  {new Date(sig.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-                  {sig.regime && ` · ${sig.regime.replace(/_/g, " ")}`}
-                </div>
-              </button>
-            ))}
-            {signals.length === 0 && (
-              <div className="text-xs text-ims-text-secondary text-center py-8">
-                No active signals. System monitoring...
               </div>
+            ) : (
+              <div className="text-center text-ims-text-secondary text-xs py-8">Loading...</div>
             )}
           </div>
-        </div>
 
-        {/* CENTRE: Heatmap + FII/DII (50%) */}
-        <div className="lg:col-span-2 space-y-2">
-          <SectorHeatmap />
-
-          {/* FII/DII Flow Chart */}
+          {/* FII/DII Flows */}
           <div className="terminal-panel p-4">
             <h3 className="text-xs font-semibold text-ims-text-secondary mb-3 uppercase tracking-wider">
               FII / DII Flows (Last 10 Days)
@@ -231,35 +237,37 @@ export default function Dashboard() {
             <div className="flex items-end gap-1 h-32">
               {fiiDii.slice(-10).map((day, i) => {
                 const maxVal = Math.max(
-                  ...fiiDii.slice(-10).map(d => Math.max(Math.abs(d.fii_net_crores), Math.abs(d.dii_net_crores)))
+                  ...fiiDii.slice(-10).map((d) =>
+                    Math.max(Math.abs(d.fii_net_crores || 0), Math.abs(d.dii_net_crores || 0))
+                  )
                 ) || 1;
-                const fiiH = Math.abs(day.fii_net_crores) / maxVal * 100;
-                const diiH = Math.abs(day.dii_net_crores) / maxVal * 100;
+                const fiiH = (Math.abs(day.fii_net_crores || 0) / maxVal) * 100;
+                const diiH = (Math.abs(day.dii_net_crores || 0) / maxVal) * 100;
 
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
                     <div className="flex gap-0.5 items-end h-24">
                       <div
-                        className="w-2 rounded-t"
+                        className="w-2 rounded-t transition-all duration-500"
                         style={{
-                          height: `${fiiH}%`,
-                          backgroundColor: day.fii_net_crores >= 0 ? "#00D4FF" : "#FF3B5C",
+                          height: `${Math.max(fiiH, 4)}%`,
+                          backgroundColor: (day.fii_net_crores || 0) >= 0 ? "#00D4FF" : "#FF3B5C",
                           opacity: 0.8,
                         }}
-                        title={`FII: ₹${day.fii_net_crores.toFixed(0)} Cr`}
+                        title={`FII: ₹${(day.fii_net_crores || 0).toFixed(0)} Cr`}
                       />
                       <div
-                        className="w-2 rounded-t"
+                        className="w-2 rounded-t transition-all duration-500"
                         style={{
-                          height: `${diiH}%`,
-                          backgroundColor: day.dii_net_crores >= 0 ? "#FFB800" : "#FF3B5C80",
+                          height: `${Math.max(diiH, 4)}%`,
+                          backgroundColor: (day.dii_net_crores || 0) >= 0 ? "#FFB800" : "#FF3B5C80",
                           opacity: 0.8,
                         }}
-                        title={`DII: ₹${day.dii_net_crores.toFixed(0)} Cr`}
+                        title={`DII: ₹${(day.dii_net_crores || 0).toFixed(0)} Cr`}
                       />
                     </div>
                     <span className="text-[8px] text-ims-text-secondary font-mono">
-                      {day.date.slice(5)}
+                      {(day.date || "").slice(-5)}
                     </span>
                   </div>
                 );
@@ -269,14 +277,86 @@ export default function Dashboard() {
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-ims-teal" /> FII</span>
               <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-ims-warning" /> DII</span>
             </div>
+            {fiiDii.length > 0 && (
+              <div className="mt-2 grid grid-cols-2 gap-2 text-[10px] font-mono">
+                <div className="terminal-panel p-2 text-center">
+                  <div className="text-ims-text-secondary">FII Net Today</div>
+                  <div className={`font-bold ${(fiiDii[fiiDii.length - 1]?.fii_net_crores || 0) >= 0 ? "text-ims-bullish" : "text-ims-bearish"}`}>
+                    ₹{(fiiDii[fiiDii.length - 1]?.fii_net_crores || 0).toFixed(0)} Cr
+                  </div>
+                </div>
+                <div className="terminal-panel p-2 text-center">
+                  <div className="text-ims-text-secondary">DII Net Today</div>
+                  <div className={`font-bold ${(fiiDii[fiiDii.length - 1]?.dii_net_crores || 0) >= 0 ? "text-ims-bullish" : "text-ims-bearish"}`}>
+                    ₹{(fiiDii[fiiDii.length - 1]?.dii_net_crores || 0).toFixed(0)} Cr
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* RIGHT: Calendar (25%) */}
-        <div className="terminal-panel p-3 overflow-y-auto" style={{ maxHeight: "calc(100vh - 160px)" }}>
+        {/* CENTRE: Trending News (6 cols) */}
+        <div className="lg:col-span-6 space-y-2">
+          <div className="terminal-panel p-4 overflow-y-auto" style={{ maxHeight: "calc(100vh - 140px)" }}>
+            <h2 className="text-xs font-semibold text-ims-text-secondary uppercase tracking-wider mb-3">
+              📰 Trending Market News & Sentiment
+            </h2>
+            <div className="space-y-2">
+              {news.map((item, i) => (
+                <a
+                  key={i}
+                  href={item.url || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block terminal-panel p-3 hover:border-ims-teal transition-all duration-200"
+                  style={{ borderLeft: `3px solid ${sentimentColor(item.sentiment_score)}`, background: sentimentBg(item.sentiment_score) }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="text-sm text-ims-text-primary font-medium leading-snug">
+                        {item.headline}
+                      </div>
+                      {item.snippet && (
+                        <div className="text-xs text-ims-text-secondary mt-1 line-clamp-2">{item.snippet}</div>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0 ml-2">
+                      <div className="text-[10px] font-semibold px-2 py-0.5 rounded"
+                        style={{ color: sentimentColor(item.sentiment_score), backgroundColor: sentimentBg(item.sentiment_score) }}>
+                        {sentimentLabel(item.sentiment_label)}
+                      </div>
+                      <div className="text-[10px] font-mono mt-1" style={{ color: sentimentColor(item.sentiment_score) }}>
+                        {item.sentiment_score > 0 ? "+" : ""}{item.sentiment_score.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 text-[9px] text-ims-text-secondary">
+                    <span className="uppercase font-semibold">{item.source}</span>
+                    <span>·</span>
+                    <span>{new Date(item.time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
+                  </div>
+                </a>
+              ))}
+              {news.length === 0 && !loading && (
+                <div className="text-center text-ims-text-secondary text-xs py-12">
+                  No trending news available. System is fetching data...
+                </div>
+              )}
+              {loading && (
+                <div className="text-center text-ims-text-secondary text-xs py-12">
+                  <div className="animate-pulse">Loading market news...</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: Corporate Actions (3 cols) */}
+        <div className="lg:col-span-3 terminal-panel p-3 overflow-y-auto" style={{ maxHeight: "calc(100vh - 140px)" }}>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xs font-semibold text-ims-text-secondary uppercase tracking-wider">
-              Corporate Actions
+              Corporate Actions This Week
             </h2>
             <Link href="/calendar" className="text-[10px] text-ims-teal hover:underline">
               Full Calendar →
@@ -284,11 +364,9 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-2">
-            {calendar.slice(0, 12).map((action) => {
+            {calendar.slice(0, 15).map((action) => {
               const isHighSeverity = ["RESULT", "BUYBACK"].includes(action.action_type);
-              const daysUntil = Math.max(0, Math.ceil(
-                (new Date(action.event_date).getTime() - Date.now()) / 86400000
-              ));
+              const eventDate = action.event_date || action.ex_date || "";
 
               return (
                 <div
@@ -298,26 +376,13 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <span>{actionTypeIcon(action.action_type)}</span>
-                      <span className="font-mono font-bold text-sm text-ims-text-primary">
-                        {action.ticker}
-                      </span>
+                      <span className="font-mono font-bold text-sm text-ims-teal">{action.ticker}</span>
                     </div>
-                    <span className={`text-[10px] font-mono ${daysUntil <= 1 ? "text-ims-warning font-bold" : "text-ims-text-secondary"}`}>
-                      {daysUntil === 0 ? "TODAY" : daysUntil === 1 ? "TOMORROW" : `${daysUntil}d`}
-                    </span>
+                    <span className="text-[10px] font-mono text-ims-text-secondary">{eventDate.slice(0, 10)}</span>
                   </div>
                   <div className="text-xs text-ims-text-secondary mt-1">
-                    {action.action_type} · {action.event_date}
+                    {action.details?.subject || action.subject || action.action_type}
                   </div>
-                  {action.momentum_label && (
-                    <span className={`text-[10px] font-mono mt-1 inline-block px-1.5 rounded ${
-                      action.momentum_label.includes("BUY") ? "text-ims-bullish bg-ims-bullish/10" :
-                      action.momentum_label.includes("SELL") ? "text-ims-bearish bg-ims-bearish/10" :
-                      "text-ims-text-secondary bg-ims-bg-card"
-                    }`}>
-                      {action.momentum_label}
-                    </span>
-                  )}
                 </div>
               );
             })}
@@ -329,104 +394,14 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
-
-      {/* ============ BOTTOM STRIP: Macro Indicators ============ */}
-      <footer className="border-t border-ims-border bg-ims-bg-panel px-4 py-2">
-        <div className="flex items-center justify-between text-[10px] font-mono text-ims-text-secondary flex-wrap gap-x-4">
-          {regime && (
-            <>
-              <span>CPI YoY: <span className="text-ims-text-primary">{(regime.cpi_yoy as number)?.toFixed(1) || "—"}%</span></span>
-              <span>Repo: <span className="text-ims-text-primary">{(regime.repo_rate as number)?.toFixed(2) || "—"}%</span></span>
-              <span>10Y G-Sec: <span className="text-ims-text-primary">{(regime.gsec_10y as number)?.toFixed(2) || "—"}%</span></span>
-              <span>2Y G-Sec: <span className="text-ims-text-primary">{(regime.gsec_2y as number)?.toFixed(2) || "—"}%</span></span>
-              <span>Yield Slope: <span className="text-ims-text-primary">{(regime.yield_curve_slope as number)?.toFixed(2) || "—"}</span></span>
-              <span>USD/INR: <span className="text-ims-text-primary">{(regime.usd_inr as number)?.toFixed(2) || "—"}</span></span>
-              <span>VIX: <span className="text-ims-text-primary">{(regime.nifty_vix as number)?.toFixed(1) || "—"}</span></span>
-            </>
-          )}
-        </div>
-      </footer>
-
-      {/* ============ SIGNAL DETAIL MODAL ============ */}
-      {selectedSignal && (
-        <div
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedSignal(null)}
-        >
-          <div
-            className="terminal-panel p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <span className="font-mono text-xl font-bold text-ims-teal">
-                  {selectedSignal.ticker}
-                </span>
-                <span className="text-sm text-ims-text-secondary ml-2">
-                  {selectedSignal.sector}
-                </span>
-              </div>
-              <button
-                onClick={() => setSelectedSignal(null)}
-                className="text-ims-text-secondary hover:text-ims-text-primary text-lg"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex gap-2 flex-wrap">
-                <span className="px-2 py-0.5 rounded text-xs font-mono bg-ims-bg-card border border-ims-border">
-                  {selectedSignal.pattern.replace(/_/g, " ")}
-                </span>
-                <span className={`px-2 py-0.5 rounded text-xs font-semibold ${confidenceColor(selectedSignal.confidence)}`}>
-                  {selectedSignal.confidence}
-                </span>
-                {selectedSignal.regime && (
-                  <RegimeBadge regime={selectedSignal.regime} size="sm" />
-                )}
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="terminal-panel p-2">
-                  <div className="text-[10px] text-ims-text-secondary">CRSS</div>
-                  <div className="font-mono font-bold" style={{ color: (selectedSignal.crss || 0) > 0 ? "#00FF88" : "#FF3B5C" }}>
-                    {selectedSignal.crss?.toFixed(2) || "—"}
-                  </div>
-                </div>
-                <div className="terminal-panel p-2">
-                  <div className="text-[10px] text-ims-text-secondary">ICS</div>
-                  <div className="font-mono font-bold" style={{ color: (selectedSignal.ics || 0) > 0 ? "#00FF88" : "#FF3B5C" }}>
-                    {selectedSignal.ics?.toFixed(2) || "—"}
-                  </div>
-                </div>
-                <div className="terminal-panel p-2">
-                  <div className="text-[10px] text-ims-text-secondary">Signal Type</div>
-                  <div className="font-mono text-xs text-ims-warning">
-                    {selectedSignal.signal_type.replace(/_/g, " ")}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs text-ims-text-secondary uppercase mb-2">Supporting Evidence</h4>
-                <div className="space-y-1.5">
-                  {selectedSignal.supporting_evidence.map((ev, i) => (
-                    <div key={i} className="text-xs text-ims-text-primary flex gap-2">
-                      <span className="text-ims-teal shrink-0">▸</span>
-                      <span>{ev}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="text-[10px] text-ims-text-secondary mt-3">
-                Signal fired: {new Date(selectedSignal.timestamp).toLocaleString("en-IN")}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
+}
+
+function actionTypeIcon(t: string) {
+  const icons: Record<string, string> = {
+    RESULT: "📊", DIVIDEND: "💰", BUYBACK: "🔄",
+    BONUS: "🎁", SPLIT: "✂️", AGM: "🏛️", RIGHTS: "📋", OTHER: "📌",
+  };
+  return icons[t] || "📌";
 }

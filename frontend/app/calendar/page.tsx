@@ -16,7 +16,7 @@ export default function CalendarPage() {
     async function load() {
       try {
         const [actRes, alertRes, bbRes] = await Promise.all([
-          fetch(`${API}/api/v1/calendar/upcoming?days=30`).then(r => r.json()),
+          fetch(`${API}/api/v1/calendar/full?days=30`).then(r => r.json()),
           fetch(`${API}/api/v1/calendar/alerts`).then(r => r.json()),
           fetch(`${API}/api/v1/calendar/buybacks`).then(r => r.json()),
         ]);
@@ -98,8 +98,8 @@ export default function CalendarPage() {
                       <span className="text-xs text-ims-text-secondary">{a.event_date as string}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {a.momentum_label && (
-                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                        {Boolean(a.momentum_label) && (
+                            <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
                           (a.momentum_label as string).includes("BUY") ? "text-ims-bullish bg-ims-bullish/10" :
                           (a.momentum_label as string).includes("SELL") ? "text-ims-bearish bg-ims-bearish/10" :
                           "text-ims-text-secondary"
@@ -134,13 +134,13 @@ export default function CalendarPage() {
                       (resultAnalysis.momentum_label as string)?.includes("SELL") ? "text-ims-bearish" : ""
                     }`}>{resultAnalysis.momentum_label as string}</span>
                   </div>
-                  {resultAnalysis.pe_ratio && (
+                  {Boolean(resultAnalysis.pe_ratio) && (
                     <div className="flex justify-between">
                       <span className="text-ims-text-secondary">P/E</span>
                       <span className="font-mono">{(resultAnalysis.pe_ratio as number)?.toFixed(1)}</span>
                     </div>
                   )}
-                  {resultAnalysis.roe && (
+                  {Boolean(resultAnalysis.roe) && (
                     <div className="flex justify-between">
                       <span className="text-ims-text-secondary">ROE</span>
                       <span className="font-mono">{(resultAnalysis.roe as number)?.toFixed(1)}%</span>

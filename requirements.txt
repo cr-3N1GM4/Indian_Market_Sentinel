@@ -35,9 +35,11 @@ scikit-learn==1.5.1
 
 # --- LLM / LangChain ---
 langchain==0.2.16
+langchain-core==0.2.38
 langchain-anthropic==0.1.23
 langchain-openai==0.1.23
-langchain-core==0.2.38
+langchain-google-genai==1.0.8
+langchain-groq==0.1.9
 
 # --- Data Processing ---
 pandas==2.2.2
@@ -59,4 +61,4 @@ structlog==24.4.0
 # --- Utilities ---
 python-dotenv==1.0.1
 orjson==3.10.7
-tenacity==9.0.0
+tenacity==8.5.0

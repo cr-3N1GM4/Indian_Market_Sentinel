@@ -8,7 +8,7 @@ from fastapi import APIRouter, Query
 from backend.config import settings
 from backend.db.timescale_client import db
 from backend.models.sentiment_models import (
-    SectorHeatmapResponse,
+    SentimentHeatmapResponse,
     SectorHeatmapSector,
     SectorHeatmapTicker,
     SentimentTrend,
@@ -16,6 +16,150 @@ from backend.models.sentiment_models import (
 )
 
 router = APIRouter(prefix="/sentiment", tags=["sentiment"])
+
+
+@router.get("/trending-news", response_model=dict)
+async def get_trending_news(limit: int = Query(default=20, ge=1, le=50)):
+    """Get trending market news with sentiment scores."""
+    # Try to get real news from DB
+    try:
+        rows = await db.fetch(
+            """
+            SELECT raw_text, sentiment_score, sentiment_label, source, url, time
+            FROM social_sentiment
+            WHERE source IN ('moneycontrol', 'economic_times')
+            ORDER BY time DESC
+            LIMIT $1
+            """,
+            limit,
+        )
+        if rows:
+            news = []
+            for r in rows:
+                text = r["raw_text"] or ""
+                parts = text.split(" | ", 1)
+                headline = parts[0] if parts else text
+                snippet = parts[1] if len(parts) > 1 else ""
+                news.append({
+                    "headline": headline,
+                    "snippet": snippet[:200],
+                    "source": r["source"],
+                    "sentiment_score": r["sentiment_score"],
+                    "sentiment_label": r["sentiment_label"],
+                    "url": r.get("url", ""),
+                    "time": r["time"].isoformat(),
+                })
+            return {
+                "data": news,
+                "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0"},
+            }
+    except Exception:
+        pass
+
+    # Fallback: scrape on the fly
+    try:
+        from backend.services.scrapers.moneycontrol_scraper import moneycontrol_scraper
+        articles = await moneycontrol_scraper.fetch_articles()
+        news = []
+        for a in articles[:limit]:
+            news.append({
+                "headline": a.headline,
+                "snippet": (a.body_snippet or "")[:200],
+                "source": a.source,
+                "sentiment_score": a.sentiment_score,
+                "sentiment_label": a.sentiment_label.value if hasattr(a.sentiment_label, "value") else str(a.sentiment_label),
+                "url": a.url or "",
+                "time": (a.published_at or datetime.utcnow()).isoformat(),
+            })
+        if news:
+            return {
+                "data": news,
+                "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0"},
+            }
+    except Exception:
+        pass
+
+    # Mock fallback
+    from backend.services.scrapers.moneycontrol_scraper import moneycontrol_scraper
+    mock_articles = moneycontrol_scraper._generate_mock_articles()
+    news = []
+    for a in mock_articles[:limit]:
+        news.append({
+            "headline": a.headline,
+            "snippet": (a.body_snippet or "")[:200],
+            "source": "moneycontrol",
+            "sentiment_score": a.sentiment_score,
+            "sentiment_label": a.sentiment_label.value if hasattr(a.sentiment_label, "value") else str(a.sentiment_label),
+            "url": "",
+            "time": datetime.utcnow().isoformat(),
+        })
+    return {
+        "data": news,
+        "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0", "stale": True},
+    }
+
+
+@router.get("/market-mood", response_model=dict)
+async def get_market_mood():
+    """Get market mood index (Fear & Greed style gauge)."""
+    import asyncio
+    from backend.services.scrapers.market_mood import compute_market_mood
+
+    adv_dec = {"advances": 25, "declines": 25}
+    fii_net = 0.0
+    vix = 15.0
+
+    # Fetch components with per-call timeouts to avoid hanging
+    try:
+        from backend.services.scrapers.nse_scraper import fetch_advances_declines
+        adv_dec = await asyncio.wait_for(fetch_advances_declines(), timeout=10)
+    except Exception:
+        pass
+
+    try:
+        from backend.services.scrapers.nse_scraper import fetch_fii_dii_activity
+        fii_dii = await asyncio.wait_for(fetch_fii_dii_activity(), timeout=10)
+        if fii_dii.get("fii"):
+            latest = fii_dii["fii"][0] if fii_dii["fii"] else {}
+            fii_net = latest.get("netValue", 0)
+    except Exception:
+        pass
+
+    try:
+        from backend.services.scrapers.nse_scraper import fetch_market_indices
+        indices = await asyncio.wait_for(fetch_market_indices(), timeout=10)
+        v = indices.get("indiaVix", 15)
+        if isinstance(v, (int, float)) and v > 0:
+            vix = v
+    except Exception:
+        pass
+
+    # Get average news sentiment from DB
+    avg_sentiment = 0.0
+    try:
+        val = await db.fetchval(
+            """
+            SELECT AVG(sentiment_score) FROM social_sentiment
+            WHERE time > NOW() - INTERVAL '24 hours'
+            """
+        )
+        if val is not None:
+            avg_sentiment = float(val)
+    except Exception:
+        pass
+
+    mood = compute_market_mood(
+        advances=adv_dec.get("advances", 25),
+        declines=adv_dec.get("declines", 25),
+        vix=vix,
+        fii_net=fii_net,
+        avg_news_sentiment=avg_sentiment,
+    )
+
+    return {
+        "data": mood,
+        "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0"},
+    }
 
 
 @router.get("/{ticker}", response_model=dict)

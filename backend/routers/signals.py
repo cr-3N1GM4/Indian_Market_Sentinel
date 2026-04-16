@@ -1,42 +1,36 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Query
 
 from backend.db.timescale_client import db
+from backend.services.scrapers.nse_scraper import fetch_top_gainers, fetch_top_losers
 
 router = APIRouter(prefix="/signals", tags=["signals"])
 
 
-def _signal_to_dict(row) -> dict:
-    """Convert DB row to signal response dict."""
-    evidence = row.get("supporting_evidence")
-    if isinstance(evidence, str):
-        try:
-            evidence = json.loads(evidence)
-        except Exception:
-            evidence = [evidence]
+@router.get("/market-movers", response_model=dict)
+async def get_market_movers():
+    """Get today's top gainers and losers from NSE."""
+    import asyncio
+    try:
+        gainers = await asyncio.wait_for(fetch_top_gainers(), timeout=10)
+    except Exception:
+        from backend.services.scrapers.nse_scraper import _mock_gainers_losers
+        gainers = _mock_gainers_losers("gainers")
+    try:
+        losers = await asyncio.wait_for(fetch_top_losers(), timeout=10)
+    except Exception:
+        from backend.services.scrapers.nse_scraper import _mock_gainers_losers
+        losers = _mock_gainers_losers("losers")
 
     return {
-        "signal_id": str(row["id"]),
-        "timestamp": str(row["time"]),
-        "ticker": row["ticker"],
-        "exchange": row.get("exchange", "NSE"),
-        "sector": row.get("sector"),
-        "pattern": row["pattern"],
-        "signal_type": row["signal_type"],
-        "confidence": row["confidence"],
-        "regime": row.get("regime"),
-        "crss": row.get("crss"),
-        "ics": row.get("ics"),
-        "fii_net_5d_crores": row.get("fii_net_5d_crores"),
-        "supporting_evidence": evidence or [],
-        "is_resolved": row.get("is_resolved", False),
-        "resolved_at": str(row["resolved_at"]) if row.get("resolved_at") else None,
-        "actual_return": row.get("actual_return"),
+        "data": {
+            "gainers": gainers,
+            "losers": losers,
+        },
+        "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0"},
     }
 
 
@@ -48,7 +42,6 @@ async def get_active_signals():
     if rows:
         signals = [_signal_to_dict(r) for r in rows]
     else:
-        # Mock signals
         signals = _generate_mock_signals()
 
     return {
@@ -59,9 +52,9 @@ async def get_active_signals():
 
 @router.get("/history", response_model=dict)
 async def get_signals_history(
-    ticker: Optional[str] = Query(default=None),
-    sector: Optional[str] = Query(default=None),
-    confidence: Optional[str] = Query(default=None),
+    ticker: str = Query(default=None),
+    sector: str = Query(default=None),
+    confidence: str = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
@@ -101,6 +94,36 @@ async def get_signal_detail(signal_id: str):
     return {
         "data": None,
         "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0", "error": "not_found"},
+    }
+
+
+def _signal_to_dict(row) -> dict:
+    """Convert DB row to signal response dict."""
+    import json
+    evidence = row.get("supporting_evidence")
+    if isinstance(evidence, str):
+        try:
+            evidence = json.loads(evidence)
+        except Exception:
+            evidence = [evidence]
+
+    return {
+        "signal_id": str(row["id"]),
+        "timestamp": str(row["time"]),
+        "ticker": row["ticker"],
+        "exchange": row.get("exchange", "NSE"),
+        "sector": row.get("sector"),
+        "pattern": row["pattern"],
+        "signal_type": row["signal_type"],
+        "confidence": row["confidence"],
+        "regime": row.get("regime"),
+        "crss": row.get("crss"),
+        "ics": row.get("ics"),
+        "fii_net_5d_crores": row.get("fii_net_5d_crores"),
+        "supporting_evidence": evidence or [],
+        "is_resolved": row.get("is_resolved", False),
+        "resolved_at": str(row["resolved_at"]) if row.get("resolved_at") else None,
+        "actual_return": row.get("actual_return"),
     }
 
 

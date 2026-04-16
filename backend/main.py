@@ -19,7 +19,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.config import settings
 from backend.db.timescale_client import db
 from backend.routers import calendar, institutional, macro, portfolio, sentiment, signals
-from backend.services.scrapers.nse_scraper import generate_mock_market_data
+from backend.routers import stock_analyzer
+from backend.services.scrapers.nse_scraper import fetch_market_indices, generate_mock_market_data
 
 logger = structlog.get_logger(__name__)
 
@@ -268,6 +269,7 @@ app.include_router(macro.router, prefix="/api/v1")
 app.include_router(signals.router, prefix="/api/v1")
 app.include_router(portfolio.router, prefix="/api/v1")
 app.include_router(calendar.router, prefix="/api/v1")
+app.include_router(stock_analyzer.router, prefix="/api/v1")
 
 
 # ----------------------------------------------------------
@@ -286,8 +288,12 @@ async def health_check():
 @app.get("/api/v1/market-data")
 async def get_market_data():
     """Live market index data (Nifty, Sensex, etc.)."""
+    try:
+        data = await fetch_market_indices()
+    except Exception:
+        data = generate_mock_market_data()
     return {
-        "data": generate_mock_market_data(),
+        "data": data,
         "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0"},
     }
 

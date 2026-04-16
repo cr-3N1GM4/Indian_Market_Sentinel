@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from typing import List
 
 from fastapi import APIRouter
 
@@ -106,5 +107,68 @@ async def run_stress_test(portfolio: PortfolioInput):
 
     return {
         "data": result.model_dump(),
+        "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0"},
+    }
+
+
+@router.post("/current-prices", response_model=dict)
+async def get_current_prices(tickers: List[str]):
+    """Fetch current prices for a list of tickers from NSE."""
+    from backend.services.scrapers.nse_scraper import fetch_stock_quote
+
+    prices = {}
+    for ticker in tickers:
+        quote = await fetch_stock_quote(ticker.upper().strip())
+        if quote:
+            prices[ticker.upper()] = {
+                "lastPrice": quote.get("lastPrice", 0),
+                "change": quote.get("change", 0),
+                "pChange": quote.get("pChange", 0),
+                "dayHigh": quote.get("dayHigh", 0),
+                "dayLow": quote.get("dayLow", 0),
+                "previousClose": quote.get("previousClose", 0),
+            }
+        else:
+            prices[ticker.upper()] = None
+
+    return {
+        "data": prices,
+        "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0"},
+    }
+
+
+@router.post("/optimize", response_model=dict)
+async def optimize_portfolio(portfolio: PortfolioInput):
+    """LLM-based portfolio optimization suggestions."""
+    from backend.services.risk.portfolio_optimizer import optimize_portfolio as run_optimize
+    from backend.services.scrapers.nse_scraper import fetch_stock_quote
+
+    holdings = []
+    for h in portfolio.holdings:
+        hd = h.model_dump()
+        # Try to get current price
+        quote = await fetch_stock_quote(h.ticker)
+        if quote:
+            hd["current_price"] = quote.get("lastPrice", 0)
+        holdings.append(hd)
+
+    result = await run_optimize(holdings)
+
+    return {
+        "data": result,
+        "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0"},
+    }
+
+
+@router.post("/risk-analysis", response_model=dict)
+async def risk_analysis(portfolio: PortfolioInput):
+    """LLM + FinBERT risk analysis of portfolio."""
+    from backend.services.risk.portfolio_optimizer import analyze_portfolio_risk
+
+    holdings_dicts = [h.model_dump() for h in portfolio.holdings]
+    result = await analyze_portfolio_risk(holdings_dicts)
+
+    return {
+        "data": result,
         "meta": {"timestamp": datetime.utcnow().isoformat(), "version": "1.0"},
     }
